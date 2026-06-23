@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -9,7 +8,7 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Robo-Advisor Pro", layout="wide")
 
-st.title("Robo-Advisor: Gestión Patrimonial y Riesgos")
+st.title("Robo-Advisor: Gestion Patrimonial y Riesgos")
 st.markdown("Plataforma cuantitativa para la asignacion optima de capital, analisis de la Frontera Eficiente y gestion de riesgos extremos (VaR & Drawdown).")
 
 st.sidebar.header("Parametros del Inversionista")
@@ -20,7 +19,7 @@ perfil_riesgo = st.sidebar.select_slider(
     value="Moderado"
 )
 
-st.sidebar.subheader("Universo de Inversión")
+st.sidebar.subheader("Universo de Inversion")
 opcion_activos = st.sidebar.radio(
     "Seleccione el mercado:",
     ("ETFs Globales (Diversificado)", "Mercado Mexicano (IPC)", "Personalizado (Yahoo Finance)")
@@ -33,7 +32,7 @@ if opcion_activos == "ETFs Globales (Diversificado)":
         'S&P 500 (SPY)': 'SPY',
         'Mercados Emergentes (VWO)': 'VWO'
     }
-elif opcion_activos == "Mercado Méxicano (IPC)":
+elif opcion_activos == "Mercado Mexicano (IPC)":
     tickers = {
         'Walmex': 'WALMEX.MX',
         'America Movil': 'AMXB.MX',
@@ -55,7 +54,7 @@ else:
         
     tickers = {t: t for t in lista_tickers}
 
-horizonte = st.sidebar.slider("Años de datos historicos para el modelo:", 1, 5, 3)
+horizonte = st.sidebar.slider("Anios de datos historicos para el modelo:", 1, 5, 3)
 
 @st.cache_data
 def cargar_datos(tickers_dict, years):
@@ -63,13 +62,33 @@ def cargar_datos(tickers_dict, years):
     hoy = datetime.today()
     inicio = hoy - timedelta(days=365 * years) 
     
-    df = yf.download(lista_tickers, start=inicio, end=hoy, interval="1d")['Close']
+    # Descarga directa
+    data = yf.download(lista_tickers, start=inicio, end=hoy, interval="1d")
     
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = df.columns.droplevel(0)
-        
+    if isinstance(data.columns, pd.MultiIndex):
+        # Extraemos solo los precios de cierre y aplanamos el MultiIndex
+        df = data['Close']
+    else:
+        # Si no es MultiIndex, es un DataFrame simple de un activo
+        df = data[['Close']]
+        df.columns = [lista_tickers[0]]
     df = df.rename(columns={v: k for k, v in tickers_dict.items()})
-    return df.dropna()
+    
+    # Rellenamos huecos (días festivos) y eliminamos los que realmente no tienen datos
+    return df.ffill().dropna()
+    
+    # Proteccion contra diferentes formatos de yfinance
+    if isinstance(df.columns, pd.MultiIndex):
+        if 'Close' in df.columns.get_level_values(0):
+            df = df['Close']
+        else:
+            df = df.xs('Close', level=1, axis=1)
+    elif 'Close' in df.columns:
+        df = df[['Close']]
+        
+    # Renombrar columnas
+    df = df.rename(columns={v: k for k, v in tickers_dict.items()})
+    return df.ffill().dropna()
 
 with st.spinner('Procesando datos y calculando matrices...'):
     precios = cargar_datos(tickers, horizonte)
@@ -160,7 +179,8 @@ with tab2:
     with rc1:
         st.error(f"Valor en Riesgo (VaR 95%) Diario:\n {var_95*100:.2f}%")
     with rc2:
-        st.warning(f"Caida Maxima:\n {ax_drawdown*100:.2f}%")
+        # AQUI ESTABA EL ERROR: Cambie ax_drawdown por max_drawdown
+        st.warning(f"Caida Maxima:\n {max_drawdown*100:.2f}%")
     with rc3:
         st.success(f"Ratio de Sharpe:\n {rend_recomendado/riesgo_recomendado:.2f}")
 
