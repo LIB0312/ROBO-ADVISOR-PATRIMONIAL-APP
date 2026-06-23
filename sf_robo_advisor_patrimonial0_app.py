@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Robo-Advisor Pro", layout="wide")
 
-st.title("Robo-Advisor: Gestion Patrimonial y Riesgos")
+st.title("Robo-Advisor: Gestión Patrimonial y Riesgos")
 st.markdown("Plataforma cuantitativa para la asignacion optima de capital, analisis de la Frontera Eficiente y gestion de riesgos extremos (VaR & Drawdown).")
 
 st.sidebar.header("Parametros del Inversionista")
@@ -20,10 +20,10 @@ perfil_riesgo = st.sidebar.select_slider(
     value="Moderado"
 )
 
-st.sidebar.subheader("Universo de Inversion")
+st.sidebar.subheader("Universo de Inversión")
 opcion_activos = st.sidebar.radio(
     "Seleccione el mercado:",
-    ("ETFs Globales (Diversificado)", "Mercado Mexicano (IPC)")
+    ("ETFs Globales (Diversificado)", "Mercado Mexicano (IPC)", "Personalizado (Yahoo Finance)")
 )
 
 if opcion_activos == "ETFs Globales (Diversificado)":
@@ -33,15 +33,29 @@ if opcion_activos == "ETFs Globales (Diversificado)":
         'S&P 500 (SPY)': 'SPY',
         'Mercados Emergentes (VWO)': 'VWO'
     }
-else:
+elif opcion_activos == "Mercado Méxicano (IPC)":
     tickers = {
         'Walmex': 'WALMEX.MX',
         'America Movil': 'AMXB.MX',
         'Banorte': 'GFNORTEO.MX',
         'Cemex': 'CEMEXCPO.MX'
     }
+else:
+    st.sidebar.markdown("---")
+    input_usuario = st.sidebar.text_input(
+        "Ingrese los Tickers (separados por coma):", 
+        value="AAPL, MSFT, NVDA, GOOGL"
+    )
+    
+    lista_tickers = [t.strip().upper() for t in input_usuario.split(',') if t.strip()]
+    
+    if len(lista_tickers) < 2:
+        st.sidebar.warning("Ingresa al menos 2 activos para poder diversificar el portafolio.")
+        lista_tickers = ["AAPL", "MSFT"]
+        
+    tickers = {t: t for t in lista_tickers}
 
-horizonte = st.sidebar.slider("Anios de datos historicos para el modelo:", 1, 5, 3)
+horizonte = st.sidebar.slider("Años de datos historicos para el modelo:", 1, 5, 3)
 
 @st.cache_data
 def cargar_datos(tickers_dict, years):
@@ -57,8 +71,12 @@ def cargar_datos(tickers_dict, years):
     df = df.rename(columns={v: k for k, v in tickers_dict.items()})
     return df.dropna()
 
-with st.spinner('Construyendo modelos matematicos y descargando datos en tiempo real...'):
+with st.spinner('Procesando datos y calculando matrices...'):
     precios = cargar_datos(tickers, horizonte)
+    
+    if precios.empty or precios.shape[1] < 2:
+        st.error("Error al procesar los datos. Asegurate de que los Tickers ingresados existan en Yahoo Finance y que haya al menos 2 activos validos.")
+        st.stop()
     
     rendimientos_diarios = precios.pct_change().dropna()
     rend_esperado_anual = rendimientos_diarios.mean() * 252
@@ -140,9 +158,9 @@ with tab2:
     
     rc1, rc2, rc3 = st.columns(3)
     with rc1:
-        st.error(f"Value at Risk (VaR 95%) Diario:\n {var_95*100:.2f}%")
+        st.error(f"Valor en Riesgo (VaR 95%) Diario:\n {var_95*100:.2f}%")
     with rc2:
-        st.warning(f"Maximum Drawdown:\n {max_drawdown*100:.2f}%")
+        st.warning(f"Caida Maxima:\n {ax_drawdown*100:.2f}%")
     with rc3:
         st.success(f"Ratio de Sharpe:\n {rend_recomendado/riesgo_recomendado:.2f}")
 
