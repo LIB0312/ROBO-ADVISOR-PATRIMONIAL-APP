@@ -54,7 +54,7 @@ else:
         
     tickers = {t: t for t in lista_tickers}
 
-horizonte = st.sidebar.slider("Añios de datos historicos para el modelo:", 1, 5, 3)
+horizonte = st.sidebar.slider("Años de datos historicos para el modelo:", 1, 5, 3)
 
 @st.cache_data
 def cargar_datos(tickers_dict, years):
@@ -141,7 +141,7 @@ picos_historicos = crecimiento_acumulado.cummax()
 drawdowns = (crecimiento_acumulado - picos_historicos) / picos_historicos
 max_drawdown = drawdowns.min()
 
-tab1, tab2, tab3 = st.tabs(["Optimizacion y Frontera", "Gestion de Riesgos", "Backtesting y Desempeno"])
+tab1, tab2, tab3 = st.tabs(["Optimizacion y Frontera", "Gestion de Riesgos", "Backtesting y Desempeño"])
 
 with tab1:
     col1, col2 = st.columns([2, 1])
