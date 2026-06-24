@@ -54,7 +54,7 @@ else:
         
     tickers = {t: t for t in lista_tickers}
 
-horizonte = st.sidebar.slider("Anios de datos historicos para el modelo:", 1, 5, 3)
+horizonte = st.sidebar.slider("Añios de datos historicos para el modelo:", 1, 5, 3)
 
 @st.cache_data
 def cargar_datos(tickers_dict, years):
