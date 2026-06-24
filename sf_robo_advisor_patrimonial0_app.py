@@ -6,9 +6,9 @@ import plotly.graph_objects as go
 import scipy.optimize as opt
 from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Robo-Advisor Pro", layout="wide")
+st.set_page_config(page_title="Easy Help", layout="wide")
 
-st.title("Robo-Advisor: Gestion Patrimonial y Riesgos")
+st.title("Easy Help")
 st.markdown("Plataforma cuantitativa para la asignacion optima de capital, analisis de la Frontera Eficiente y gestion de riesgos extremos (VaR & Drawdown).")
 
 st.sidebar.header("Parametros del Inversionista")
@@ -179,7 +179,6 @@ with tab2:
     with rc1:
         st.error(f"Valor en Riesgo (VaR 95%) Diario:\n {var_95*100:.2f}%")
     with rc2:
-        # AQUI ESTABA EL ERROR: Cambie ax_drawdown por max_drawdown
         st.warning(f"Caida Maxima:\n {max_drawdown*100:.2f}%")
     with rc3:
         st.success(f"Ratio de Sharpe:\n {rend_recomendado/riesgo_recomendado:.2f}")
